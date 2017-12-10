@@ -280,15 +280,29 @@ void *resizeRegion(void *r, size_t newSize) {
     int oldSize;
     
     // make sure to allign8 newSize!
-    size_t reSize = align8( newSize );
+    newSize = align8( newSize );
     
-    if (r != (void *)0)		/* old region existed */
+    if (r != (void *)0)		
+    {
+        /* old region existed */
+        printf( "---debug--- old region existed\n" );
         oldSize = computeUsableSpace(regionToPrefix(r));
-    else
-        oldSize = 0;		/* non-existant regions have size 0 */
+    }
     
-    if (oldSize >= reSize)	/* old region is big enough */
+    else
+    {
+        /* non-existant regions have size 0 */
+        printf( "---debug--- non-existant regions have size 0\n" );
+        oldSize = 0;		
+    }
+    
+    if (oldSize >= newSize)
+    {
+        /* old region is big enough */
+        printf( "---debug--- old region is big enough\n" );
+        
         return r;
+    }
     
     // if the successor 's' to r's block is free, and there is sufficient space
     // in r + s, then just adjust sizes of r & s.
@@ -297,11 +311,26 @@ void *resizeRegion(void *r, size_t newSize) {
     BlockPrefix_t *nextPrefix = computeNextPrefixAddr( currPrefix ); // next prefix
     
     int successorSpace = computeUsableSpace( nextPrefix );
-    // printf( "---debug---succesorSpace = %d", succesorSpace );
+    
+    // DEBUGs
+    printf( "---debug---successorSpace = %d", successorSpace );
+    
+    size_t reSize = oldSize + successorSpace;
+    
+    if( !(nextPrefix->allocated) && newSize <= reSize )
+    {
+        currPrefix->suffix = nextPrefix->suffix;
+        nextPrefix->suffix->prefix = currPrefix;
+        
+        return r;
+    }
     
     /* ---------------------------------------------------------------- */
-    //else 
-    //{			/* allocate new region & copy old data */
+    else 
+    {
+        /* allocate new region & copy old data */
+        printf( "---debug--- old region is big enough\n" );
+        
         char *o = (char *)r;	/* treat both regions as char* */
         char *n = (char *)firstFitAllocRegion(newSize); 
         int i;
@@ -310,6 +339,6 @@ void *resizeRegion(void *r, size_t newSize) {
         n[i] = o[i];
     freeRegion(o);		/* free old region */
     return (void *)n;
-    //}
+    }
 }
 
