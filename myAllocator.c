@@ -251,6 +251,30 @@ void freeRegion(void *r) {
    TODO: if the successor 's' to r's block is free, and there is sufficient space
    in r + s, then just adjust sizes of r & s.
 */
+
+/*
+void *resizeRegion(void *r, size_t newSize) {
+  int oldSize;
+  if (r != (void *)0)		// old region existed
+    oldSize = computeUsableSpace(regionToPrefix(r));
+  else
+    oldSize = 0;		// non-existant regions have size 0
+  if (oldSize >= newSize)	// old region is big enough
+    return r;
+  else {			// allocate new region & copy old data
+    char *o = (char *)r;	// treat both regions as char*
+    char *n = (char *)firstFitAllocRegion(newSize); 
+    int i;
+    for (i = 0; i < oldSize; i++) // copy byte-by-byte, should use memcpy
+      n[i] = o[i];
+    freeRegion(o);		// free old region
+    return (void *)n;
+  }
+}
+*/
+
+// Improving implementation of resizeRegion()
+
 void *resizeRegion(void *r, size_t newSize) {
   int oldSize;
   if (r != (void *)0)		/* old region existed */
