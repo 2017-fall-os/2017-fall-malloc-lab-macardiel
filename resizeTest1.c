@@ -19,7 +19,7 @@ int main()
   printf( "Testing Old Size is large enough (given case)\n" );\
   arenaCheck();
   p1 = resizeRegion(p1, 15);
-  printf( "2) p1: %p\n", p1 );
+  printf( "2) p1: %p\n", p1-8 );
   arenaCheck();
   
   return 0;
