@@ -219,6 +219,7 @@ void *firstFitAllocRegion(size_t s) {
   p = findFirstFit(s);		/* find a block */
   if (p) {			/* found a block */
     size_t availSize = computeUsableSpace(p);
+    //printf( "---debug---p=%8zd\n", availSize );
     if (availSize >= (asize + prefixSize + suffixSize + 8)) { /* split block? */
       void *freeSliverStart = (void *)p + prefixSize + suffixSize + asize;
       void *freeSliverEnd = computeNextPrefixAddr(p);
@@ -235,26 +236,71 @@ void *firstFitAllocRegion(size_t s) {
 
 // bestFit allocator
 // function by Marco Cardiel
-
 // ------------------------------------------------------
 
 void *bestFitAllocRegion(size_t s) {
   size_t asize = align8(s);
   BlockPrefix_t *p;
+  BlockPrefix_t *largestBlock;
+  size_t largestSize;
+  size_t pSize;
+  
   if (arenaBegin == 0)		/* arena uninitialized? */
     initializeArena();
+  
   p = findFirstFit(s);		/* find a block */
-  if (p) {			/* found a block */
-    size_t availSize = computeUsableSpace(p);
-    if (availSize >= (asize + prefixSize + suffixSize + 8)) { /* split block? */
-      void *freeSliverStart = (void *)p + prefixSize + suffixSize + asize;
-      void *freeSliverEnd = computeNextPrefixAddr(p);
-      makeFreeBlock(freeSliverStart, freeSliverEnd - freeSliverStart);
-      makeFreeBlock(p, freeSliverStart - (void *)p); /* piece being allocated */
+  largestBlock = p;
+  
+  if (largestBlock) {			/* found a block */
+    
+    largestSize = computeUsableSpace(largestBlock);
+      
+    while(p)
+    {
+        // To find best fit, we find largest free block that accomodates request
+        // this reduces fragmentation!
+        
+        //printf( "---debug---currP=%p\n" );
+        p = getNextPrefix(p);
+        
+        if( p && !p->allocated )
+        {
+            //printf( "---debug--- p was NOT allocated\n" );
+            
+            largestSize = computeUsableSpace(largestBlock);
+            pSize = computeUsableSpace(p);
+            
+            //printf( "---debug---largest=%8zd, currPs=%8zd\n", largestSize, pSize );
+            
+            if( pSize > largestSize )
+            {
+                largestBlock = p;
+                largestSize = computeUsableSpace(largestBlock);
+            }
+        }
+        
+        //else
+            //printf( "---debug--- p was already allocated\n" );
+        
     }
-    p->allocated = 1;		/* mark as allocated */
-    return prefixToRegion(p);	/* convert to *region */
-  } else {			/* failed */
+    //printf( "---debug---largest=%p, lSz=%8zd\n", largestBlock, largestSize );
+    
+    if (largestSize >= (asize + prefixSize + suffixSize + 8)) { /* split block? */
+        //printf( "---debug--- split block?\n" );
+      void *freeSliverStart = (void *)largestBlock + prefixSize + suffixSize + asize;
+      void *freeSliverEnd = computeNextPrefixAddr(largestBlock);
+      
+      makeFreeBlock(freeSliverStart, freeSliverEnd - freeSliverStart);
+      makeFreeBlock(largestBlock, freeSliverStart - (void *)largestBlock); /* piece being allocated */
+    }
+    
+    largestBlock->allocated = 1;		/* mark as allocated */
+    return prefixToRegion(largestBlock);	/* convert to *region */
+    
+  } 
+  
+  else 
+  {			/* failed */
     return (void *)0;
   }
   
@@ -388,7 +434,7 @@ void *resizeRegion(void *r, size_t newSize) {
     else 
     {
         /* allocate new region & copy old data */
-        printf( "---debug--- old region is big enough\n" );
+        //printf( "---debug--- old region is big enough\n" );
         
         char *o = (char *)r;	/* treat both regions as char* */
         char *n = (char *)firstFitAllocRegion(newSize); 
