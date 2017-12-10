@@ -285,21 +285,21 @@ void *resizeRegion(void *r, size_t newSize) {
     if (r != (void *)0)		
     {
         /* old region existed */
-        printf( "---debug--- old region existed\n" );
+        //printf( "---debug--- old region existed\n" );
         oldSize = computeUsableSpace(regionToPrefix(r));
     }
     
     else
     {
         /* non-existant regions have size 0 */
-        printf( "---debug--- non-existant regions have size 0\n" );
+        //printf( "---debug--- non-existant regions have size 0\n" );
         oldSize = 0;		
     }
     
     if (oldSize >= newSize)
     {
         /* old region is big enough */
-        printf( "---debug--- old region is big enough\n" );
+        //printf( "---debug--- old region is big enough\n" );
         
         return r;
     }
@@ -313,34 +313,38 @@ void *resizeRegion(void *r, size_t newSize) {
     int successorSpace = computeUsableSpace( nextPrefix );
     
     // DEBUGs
-    printf( "---debug---successorSpace = %d\n", successorSpace );
+    //printf( "---debug---successorSpace = %d\n", successorSpace );
     
     size_t totalSize = oldSize + successorSpace;
     
     if( !(nextPrefix->allocated) && newSize <= totalSize )
     {
-        printf( "---debug--- r+s identified\n" );
+        //printf( "---debug--- r+s identified\n" );
         
         size_t constantSize = prefixSize + suffixSize;
         size_t sizeDiff = newSize - oldSize;
         
-        printf( "---debug--- SucSz=%d, szDif=%d, consSz=%d\n", successorSpace, sizeDiff, constantSize );
+        //printf( "---debug--- SucSz=%d, szDif=%d, consSz=%d\n", successorSpace, sizeDiff, constantSize );
         
         // Avoid getting whole block if possible, only get what is needed
         if( successorSpace >= (sizeDiff + constantSize + 8) )
         {
-            printf( "---debug--- make block of desired size\n" );
+            //printf( "---debug--- make block of desired size\n" );
             // make block of desired size
             void *newBlockStart = (void *)currPrefix + newSize + constantSize;
             void *newBlockEnd = nextPrefix->suffix;
             
-            //size_t newBlockSize = newBlockEnd - newBlockStart;
+            size_t newBlockSize = newBlockEnd - newBlockStart;
             
-            makeFreeBlock(newBlockStart, newBlockEnd - newBlockStart);
+            //printf( "---debug---NBS=%p, NBE=%p, NBSZ=%d\n", newBlockStart, newBlockEnd, newBlockSize);
+            
+            makeFreeBlock(newBlockStart, newBlockSize);
 
             BlockSuffix_t *newSuffix = newBlockStart - suffixSize;
             newSuffix->prefix = currPrefix;
             currPrefix->suffix = newSuffix;
+            
+            //printf( "---debug---currP=%p, prefSz=%d\n", newBlockStart, prefixSize );
 
             return currPrefix + prefixSize;
         }
