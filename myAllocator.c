@@ -319,6 +319,8 @@ void *resizeRegion(void *r, size_t newSize) {
     
     if( !(nextPrefix->allocated) && newSize <= reSize )
     {
+        printf( "---debug--- r+s identified" );
+        
         currPrefix->suffix = nextPrefix->suffix;
         nextPrefix->suffix->prefix = currPrefix;
         

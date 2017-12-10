@@ -12,14 +12,23 @@ int main()
   // initial p1
   
   arenaCheck();
-  p1 = firstFitAllocRegion(254);
-  printf( "1) initial p1: %p\n", p1-8 );
+  p1 = firstFitAllocRegion(32);
+  printf( "\n\n0) initial p1: %p\n", p1-8 );
   arenaCheck();
   
-  printf( "Testing Old Size is large enough (given case)\n" );\
+  printf( "\nTesting Old Size is large enough (given case)\n" );\
   arenaCheck();
-  p1 = resizeRegion(p1, 15);
-  printf( "2) p1: %p\n", p1-8 );
+  p1 = resizeRegion(p1, 16);
+  printf( "1) p1: %p\n", p1-8 );
+  arenaCheck();
+  
+  printf("\nTesting Next block is large enough\n" );
+  p2 = firstFitAllocRegion(16);
+  printf("2.1) p2: %p\n", p2-8);
+  freeRegion(p1);
+  arenaCheck();
+  p2 = resizeRegion(p2, 40);
+  printf("2.2) p2: %p\n", p2-8);
   arenaCheck();
   
   return 0;
