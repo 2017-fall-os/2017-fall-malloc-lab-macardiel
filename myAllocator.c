@@ -313,13 +313,37 @@ void *resizeRegion(void *r, size_t newSize) {
     int successorSpace = computeUsableSpace( nextPrefix );
     
     // DEBUGs
-    printf( "---debug---successorSpace = %d", successorSpace );
+    printf( "---debug---successorSpace = %d\n", successorSpace );
     
-    size_t reSize = oldSize + successorSpace;
+    size_t totalSize = oldSize + successorSpace;
     
-    if( !(nextPrefix->allocated) && newSize <= reSize )
+    if( !(nextPrefix->allocated) && newSize <= totalSize )
     {
-        printf( "---debug--- r+s identified" );
+        printf( "---debug--- r+s identified\n" );
+        
+        size_t constantSize = prefixSize + suffixSize;
+        size_t sizeDiff = newSize - oldSize;
+        
+        printf( "---debug--- SucSz=%d, szDif=%d, consSz=%d\n", successorSpace, sizeDiff, constantSize );
+        
+        // Avoid getting whole block if possible, only get what is needed
+        if( successorSpace >= (sizeDiff + constantSize + 8) )
+        {
+            printf( "---debug--- make block of desired size\n" );
+            // make block of desired size
+            void *newBlockStart = (void *)currPrefix + newSize + constantSize;
+            void *newBlockEnd = nextPrefix->suffix;
+            
+            //size_t newBlockSize = newBlockEnd - newBlockStart;
+            
+            makeFreeBlock(newBlockStart, newBlockEnd - newBlockStart);
+
+            BlockSuffix_t *newSuffix = newBlockStart - suffixSize;
+            newSuffix->prefix = currPrefix;
+            currPrefix->suffix = newSuffix;
+
+            return currPrefix + prefixSize;
+        }
         
         currPrefix->suffix = nextPrefix->suffix;
         nextPrefix->suffix->prefix = currPrefix;
